@@ -13,12 +13,13 @@ const getEthereumContract = () => {
     const signer = provider.getSigner();
     const transactionContract = new ethers.Contract(contractAddress, contractABI, signer)
 
-
-    console.log({
-        provider,
-        signer,
-        transactionContract 
-    })
+//this is like the most important part of the app...
+    // console.log({
+    //     provider,
+    //     signer,
+    //     transactionContract 
+    // })
+    return transactionContract;
 }
 
 export const TransactionProvider = ({ children }) => {
@@ -29,12 +30,8 @@ export const TransactionProvider = ({ children }) => {
         keyword: "",
         message: ""
     })
-
-    // just normal react
-    
-//   const handleChange = (e, name) => {
-//     setFormData((prevState) => ({ ...prevState, [name]: e.target.value }));
-//   };
+    const [loading, setLoading] = useState(false)
+    const [transactionCount, setTransactionCount] = useState(localStorage.getItem('transactionCount'))
 
 const handleChange = (e) => {
     setFormData((prevState) => ({
@@ -42,6 +39,22 @@ const handleChange = (e) => {
         [e.target.name]: e.target.value
     }))
 }
+
+// For the transaction section on the page. it is called in CHECKIFWALLETISCONNECTED
+    const getAllTransactions = async () => {
+        try {
+            if(!ethereum) return alert("Please install metamask 🦊")
+
+            const transactionContract = getEthereumContract();
+            const availableTransactions = await transactionContract.getAllTransactions()
+            // console.log(availableTransactions)
+
+        } catch (error) {
+            console.log(error)
+
+            throw new Error("No Ethereum Object")
+        }
+    }
 
     // checking if a wallet is connected
     const checkIfWalletIsConnected = async () => {
@@ -56,6 +69,7 @@ const handleChange = (e) => {
                 setCurrentAccount(accounts[0])
 
                 // get all transactions
+                getAllTransactions();
             }else{
                 console.log('No accounts found')
             }        
@@ -66,6 +80,20 @@ const handleChange = (e) => {
         }
         
         // console.log(accounts)
+    }
+
+    // FUNCTION TO CHECK IF TRANSACTIONS EXISTS
+    const checkIfTransactionsExist = async () => {
+        try {
+            const transactionContract = getEthereumContract();
+            const transactionCount = await transactionContract.getTransactionCount();
+
+            window.localStorage.setItem('transactionCount', transactionCount)
+        } catch (error) {
+            console.log(error)
+
+            throw new Error("No Ethereum");
+        }
     }
 
     const connectWallet = async () => {
@@ -89,9 +117,34 @@ const handleChange = (e) => {
             if(!ethereum) return alert("Please install Metamask 🦊")
 
             const { addressTo, amount, keyword, message } = formData;
-
             // calling the Ethereum contract
-            getEthereumContract()
+            const transactionContract = getEthereumContract()
+            // converting Amount entered in form to HEX or GWEI
+            const parsedAmount = ethers.utils.parseEther(amount)
+            // this only sends ETH from one address to another...
+            await ethereum.request({
+                method: 'eth_sendTransaction',
+                params: [{
+                    from: currentAccount, 
+                    to: addressTo,
+                    gas: '0x5208', 
+                    value: parsedAmount._hex,
+                }]
+            })
+
+            // To store our transaction(ADDING TO BLOCKCHAIN)
+            const transactionHash = await transactionContract.addToBlockChain(addressTo, parsedAmount, message, keyword)
+
+            setLoading(true)
+            console.log(`Loading - ${transactionHash.hash}`)
+            await transactionHash.wait(); // this waits for the transaction to be finished
+
+            setLoading(false)
+            console.log(`Success - ${transactionHash.hash}`)
+
+            const transactionsCount = await transactionContract.getTransactionCount();
+            
+            setTransactionCount(transactionsCount.toNumber())
 
             // get the data from the form
         } catch (error) {
@@ -103,6 +156,7 @@ const handleChange = (e) => {
 
     useEffect(() => {
         checkIfWalletIsConnected();
+        checkIfTransactionsExist();
     }, [])
 
     return (

@@ -3,23 +3,13 @@ import { AiFillPlayCircle } from 'react-icons/ai'
 import {SiEthereum} from 'react-icons/si'
 import { BsInfoCircle } from 'react-icons/bs'
 import { TransactionContext } from '../context/TransactionContext' 
+import { shortenAddress } from '../utils/ShortenAddress'
 
 import { Loader } from './index'
 
 const Welcome = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { connectWallet, currentAccount, formData, sendTransaction, handleChange } = useContext(TransactionContext)
-
-  // const Input = ({ placeholder, name, type, value, handleChange }) => (
-  //   <input 
-  //     placeholder={placeholder}
-  //     type={type}
-  //     step="0.0001"
-  //     value={value}
-  //     onChange={(e) => handleChange(e, name)}
-  //     className="my-2 w-full rounded-sm p-2 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
-  //   />
-  // )
 
   const InputStyles = "my-2 w-full rounded-sm p-2 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
 
@@ -100,7 +90,7 @@ const Welcome = () => {
 
               <div>
                 <p className='text-white font-light text-sm'>
-                  0xasdfdas.....sdfalj;
+                  {shortenAddress(currentAccount)}
                 </p>
                 <p className='text-white font-semibold text-lg mt-1'>
                   Ethereum
@@ -111,11 +101,7 @@ const Welcome = () => {
 
           {/* FORM DIV */}
           <div className='p-5 sm:w-96 w-full flex flex-col justify-start items-center blue-glassmorphism'>
-            {/* <Input placeholder="Address To" name="addressTo" type="text" handleChange={handleChange} />
-            <Input placeholder="Amount (ETH)" name="amount" type="number" handleChange={handleChange} value={formData.amount}/>
-            <Input placeholder="Keyword (Gif)" name="keyword" type="text" handleChange={handleChange} value={formData.keyword}/>
-            <Input placeholder="Enter Message" name="message" type="text" handleChange={handleChange} value={formData.message}/> */}
-
+           
             <input 
               type="text" 
               placeholder='Address To'
